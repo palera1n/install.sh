@@ -1,5 +1,5 @@
 #!/bin/sh
-
+printf "\033c"
 echo '# == palera1n-c install script =='
 echo '#'
 echo '# Made by: Samara, Staturnz'
@@ -53,13 +53,62 @@ warning() {
 }
 
 # =========
+# Release version menu
+# =========
+
+function release_menu {
+    ESC=$(printf "\033")
+    on()          { printf "$ESC[?25h"; }
+    off()         { printf "$ESC[?25l"; }
+    to()          { printf "$ESC[$1;${2:-1}H"; }
+    items()       { printf "   $1 "; }
+    select_row()  { printf "  $ESC[7m $1 $ESC[27m"; }
+    get_row()     { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
+
+    input() { 
+        read -s -n3 key 2>/dev/null >&2
+        if [[ $key = $ESC[A ]]; then echo up;    fi
+        if [[ $key = $ESC[B ]]; then echo down;  fi
+        if [[ $key = ""     ]]; then echo enter; fi; 
+    }
+
+    for opt; do printf "\n"; done
+    local lastrow=`get_row`
+    local startrow=$(($lastrow - $#))
+    trap "on; stty echo; printf '\n'; exit" 2; off
+
+    local selected=0
+    while true; do
+        local idx=0
+        for opt; do
+            to $(($startrow + $idx))
+            if [ $idx -eq $selected ]; then select_row "$opt"
+            else items "$opt"; fi
+            ((idx++))
+        done
+
+        case `input` in
+            enter) break;;
+            up) ((selected--)); if [ $selected -lt 0 ]; then selected=$(($# - 1));fi;;
+            down) ((selected++));if [ $selected -ge $# ]; then selected=0;fi;;
+        esac
+    done
+
+    to $lastrow; printf "\n"; on
+    return $selected
+}
+
+# =========
 # Variables
 # =========
 
 os=$(uname)
+os_name="$os"
 
-latest_build=$(curl -s "https://api.github.com/repos/palera1n/palera1n/tags" | jq -r '.[].name' | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+(\.[0-9]+)*$" | sort -V | tail -n 1)
-info "Using release tag ${latest_build}."
+latest_build=$(curl -s "https://api.github.com/repos/palera1n/palera1n/tags" | jq -r '.[].name' | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+(\.[0-9]+)*$" | sort -V | tail -n 1) 
+download_version="$latest_build"
+
+install_path="/usr/local/bin/palera1n"
 
 # =========
 # OS and Architecture
@@ -68,9 +117,15 @@ info "Using release tag ${latest_build}."
 case "$os" in
     Linux)
         arch_check=$(arch)
+        os_name="Linux"
     ;;
     Darwin)
         arch_check=$(uname -m)
+        if [[ "$(uname -r | cut -d. -f1)" -gt "16" ]]; then
+            os_name="macOS"
+        else
+            os_name="Mac OS X"
+        fi
     ;;
     *)
         error "Unknown or unsupported OS."
@@ -104,70 +159,45 @@ case "$arch_check" in
     ;;
 esac
 
-info "Found OS type ($os $arch)."
+info "Found OS type ($os_name $arch)."
 
 # =========
 # Run
 # =========
 
-show_menu() {
-    echo
-    echo " ╭────────────────╮ "
-    echo " │ 1) Latest      │ "
-    echo " │ 2) Nightly     │ "
-    echo " │ 3) Experiments │ "
-    echo " ├────────────────┤ "
-    echo " │ 0) Exit        │ "
-    echo " ╰────────────────╯ "
-}
-
-handle_choice() {
-    case $key in
-        1)
-            echo "You selected Option 1."
-            # ...
-            ;;
-        2)
-            echo "You selected Option 2."
-            # ...
-            ;;
-        3)
-            echo "You selected Option 3."
-            # ...
-            ;;
-        0)
-            echo "Exiting..."
-            exit 1
-            ;;
-        *)
-            echo "Invalid choice. Please try again."
-            ;;
-    esac
-}
-
-show_menu
-read -n 1 -s -r -p "Press a key to select an option: " key
-handle_choice
-echo
-
-case $key in
-    1) handle_choice 1 ;;
-    2) handle_choice 2 ;;
-    3) handle_choice 3 ;;
-    0) handle_choice 0 ;;
-    *) handle_choice ;;
+case "$1" in
+    "--list"|"-l")
+        info "Use the Up/Down arrow keys to select a release, then press enter to install.\n"
+        options=("v2.0.0-beta.5" "v2.0.0-beta.6.2" "v2.0.0-beta.7")
+        release_menu "${options[@]}"
+        choice=$?
+        download_version="${options[$choice]}"
+    ;;
+    *)
+        download_version="${latest_build}"
+    ;;
 esac
 
-# echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}: ${LIGHT_CYAN}Fetching palera1n (${latest_build}) build for $os.${NO_COLOR}"
-# case "$os" in
-#     Linux)
-#         mkdir -p /usr/local/bin
-#         curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${latest_build}/palera1n-linux-${arch}" > /dev/null 2>&1
-#         chmod +x /usr/local/bin/palera1n
-#     ;;
-#     Darwin)
-#         mkdir -p /usr/local/bin
-#         curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${latest_build}/palera1n-macos-${arch}" > /dev/null 2>&1
-#         chmod +x /usr/local/bin/palera1n
-#     ;;
-# esac
+info "Using release tag ${download_version}."
+info "Fetching palera1n (${download_version}) build for ($os_name $arch)."
+
+mkdir -p /usr/local/bin
+case "$os" in
+    Linux)
+        mkdir -p /usr/local/bin
+        curl -Lo $install_path "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-linux-${arch}" > /dev/null 2>&1
+        chmod +x $install_path
+    ;;
+    Darwin)
+        mkdir -p /usr/local/bin
+        curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-macos-${arch}" > /dev/null 2>&1
+        chmod +x $install_path
+    ;;
+esac
+
+if [ -f "$install_path" ]; then
+    info "palera1n is now installed at ${install_path}"
+else 
+    error "palera1n failed to install. Please check your internet connection and try again."
+    exit 1
+fi
