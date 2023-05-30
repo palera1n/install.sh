@@ -22,10 +22,26 @@ NO_COLOR='\033[0m'
 # =========
 # Variables
 # =========
+os=$(uname)
+
+case "$os" in
+    Linux)
+        arch=$(arch)
+    ;;
+    Darwin)
+        arch=$(uname -m)
+    ;;
+esac
 
 # =========
 # Check if id is 0
 # =========
+
+[ "$os" = "Linux" ] && {
+    [[ $(grep -i Microsoft /proc/version) ]] && {
+        echo " - [${YELLOW}$current_time${NO_COLOR}] ${RED}<Error>${NO_COLOR}: ${RED}WSL is not supported in this install script.${NO_COLOR}"
+    }
+}
 
 [ "$(id -u)" -ne 0 ] && {
     current_time=$(date +"%m/%d/%y %H:%M:%S")
