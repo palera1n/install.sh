@@ -4,6 +4,7 @@ echo '# == palera1n-c install script =='
 echo '#'
 echo '# Made by: Samara, Staturnz'
 echo '#'
+echo ''
 
 # =========
 # Colors for output text
@@ -31,6 +32,8 @@ alias current_time="date +'%m/%d/%y %H:%M:%S'"
 
 os=$(uname)
 latest_build=$(curl -s "https://api.github.com/repos/palera1n/palera1n/tags" | jq -r '.[].name' | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+(\.[0-9]+)*$" | sort -V | tail -n 1)
+
+echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}: ${LIGHT_CYAN}Using release tag ${latest_build}.${NO_COLOR}"
 
 case "$os" in
     Linux)
@@ -64,7 +67,7 @@ case "$arch_check" in
     ;;
 esac
 
-echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}: ${LIGHT_CYAN}Found OS type ($os - $arch)${NO_COLOR}"
+echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}: ${LIGHT_CYAN}Found OS type ($os $arch).${NO_COLOR}"
 
 # =========
 # Check if id is 0
@@ -85,13 +88,16 @@ echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}
 # Run
 # =========
 
+echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}: ${LIGHT_CYAN}Fetching palera1n (${latest_build}) build for $os.${NO_COLOR}"
 case "$os" in
     Linux)
         mkdir -p /usr/local/bin
-        curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${latest_build}/palera1n-linux-${arch}"
+        curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${latest_build}/palera1n-linux-${arch}" > /dev/null 2>&1
+        chmod +x /usr/local/bin/palera1n
     ;;
     Darwin)
         mkdir -p /usr/local/bin
-        curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${latest_build}/palera1n-macos-universal"
+        curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${latest_build}/palera1n-macos-${arch}" > /dev/null 2>&1
+        chmod +x /usr/local/bin/palera1n
     ;;
 esac
