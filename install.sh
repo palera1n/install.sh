@@ -28,6 +28,7 @@ NO_COLOR='\033[0m'
 # =========
 # Variables
 # =========
+
 alias current_time="date +'%m/%d/%y %H:%M:%S'"
 
 os=$(uname)
@@ -88,16 +89,64 @@ echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}
 # Run
 # =========
 
-echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}: ${LIGHT_CYAN}Fetching palera1n (${latest_build}) build for $os.${NO_COLOR}"
-case "$os" in
-    Linux)
-        mkdir -p /usr/local/bin
-        curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${latest_build}/palera1n-linux-${arch}" > /dev/null 2>&1
-        chmod +x /usr/local/bin/palera1n
-    ;;
-    Darwin)
-        mkdir -p /usr/local/bin
-        curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${latest_build}/palera1n-macos-${arch}" > /dev/null 2>&1
-        chmod +x /usr/local/bin/palera1n
-    ;;
+show_menu() {
+    echo
+    echo " ╭────────────────╮ "
+    echo " │ 1) Latest      │ "
+    echo " │ 2) Nightly     │ "
+    echo " │ 3) Experiments │ "
+    echo " ├────────────────┤ "
+    echo " │ 0) Exit        │ "
+    echo " ╰────────────────╯ "
+}
+
+handle_choice() {
+    case $key in
+        1)
+            echo "You selected Option 1."
+            # ...
+            ;;
+        2)
+            echo "You selected Option 2."
+            # ...
+            ;;
+        3)
+            echo "You selected Option 3."
+            # ...
+            ;;
+        0)
+            echo "Exiting..."
+            exit 1
+            ;;
+        *)
+            echo "Invalid choice. Please try again."
+            ;;
+    esac
+}
+
+show_menu
+read -n 1 -s -r -p "Press a key to select an option: " key
+handle_choice
+echo
+
+case $key in
+    1) handle_choice 1 ;;
+    2) handle_choice 2 ;;
+    3) handle_choice 3 ;;
+    0) handle_choice 0 ;;
+    *) handle_choice ;;
 esac
+
+# echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}: ${LIGHT_CYAN}Fetching palera1n (${latest_build}) build for $os.${NO_COLOR}"
+# case "$os" in
+#     Linux)
+#         mkdir -p /usr/local/bin
+#         curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${latest_build}/palera1n-linux-${arch}" > /dev/null 2>&1
+#         chmod +x /usr/local/bin/palera1n
+#     ;;
+#     Darwin)
+#         mkdir -p /usr/local/bin
+#         curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${latest_build}/palera1n-macos-${arch}" > /dev/null 2>&1
+#         chmod +x /usr/local/bin/palera1n
+#     ;;
+# esac
