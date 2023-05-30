@@ -26,15 +26,44 @@ LIGHT_CYAN='\033[0;96m'
 NO_COLOR='\033[0m'
 
 # =========
-# Variables
+# Logging
 # =========
 
 alias current_time="date +'%m/%d/%y %H:%M:%S'"
 
-os=$(uname)
-latest_build=$(curl -s "https://api.github.com/repos/palera1n/palera1n/tags" | jq -r '.[].name' | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+(\.[0-9]+)*$" | sort -V | tail -n 1)
+error() {
+    echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${RED}<Error>${NO_COLOR}: ${RED}"$1"${NO_COLOR}"
+}
 
-echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}: ${LIGHT_CYAN}Using release tag ${latest_build}.${NO_COLOR}"
+info() {
+    echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}: ${LIGHT_CYAN}"$1"${NO_COLOR}"
+}
+
+warning() {
+    echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${YELLOW}<Warning>${NO_COLOR}: ${YELLOW}"$1"${NO_COLOR}"
+}
+
+# =========
+# Check if id is 0
+# =========
+
+[ "$(id -u)" -ne 0 ] && {
+    warning "In order to use this script, run with root or use sudo."
+    exit 1
+}
+
+# =========
+# Variables
+# =========
+
+os=$(uname)
+
+latest_build=$(curl -s "https://api.github.com/repos/palera1n/palera1n/tags" | jq -r '.[].name' | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+(\.[0-9]+)*$" | sort -V | tail -n 1)
+info "Using release tag ${latest_build}."
+
+# =========
+# OS and Architecture
+# =========
 
 case "$os" in
     Linux)
@@ -44,10 +73,17 @@ case "$os" in
         arch_check=$(uname -m)
     ;;
     *)
-        echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${RED}<Error>${NO_COLOR}: ${RED}Unknown or unsupported OS.${NO_COLOR}"
+        error "Unknown or unsupported OS."
         exit 1
     ;;
 esac
+
+[ "$os" = "Linux" ] && {
+    [[ $(grep -i Microsoft /proc/version) ]] && {
+        error "WSL is not supported in this install script."
+        exit 1
+    }
+}
 
 case "$arch_check" in
     x86_64* | amd64)
@@ -63,27 +99,12 @@ case "$arch_check" in
         arch=armel
     ;;
     *)
-        echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${RED}<Error>${NO_COLOR}: ${RED}Unknown or unsupported architecture.${NO_COLOR}"
+        error "Unknown or unsupported architecture."
         exit 1
     ;;
 esac
 
-echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}: ${LIGHT_CYAN}Found OS type ($os $arch).${NO_COLOR}"
-
-# =========
-# Check if id is 0
-# =========
-
-[ "$os" = "Linux" ] && {
-    [[ $(grep -i Microsoft /proc/version) ]] && {
-        echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${RED}<Error>${NO_COLOR}: ${RED}WSL is not supported in this install script.${NO_COLOR}"
-    }
-}
-
-[ "$(id -u)" -ne 0 ] && {
-    echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${YELLOW}<Warning>${NO_COLOR}: ${YELLOW}In order to use this script, run with root or use sudo.${NO_COLOR}"
-    exit 1
-}
+info "Found OS type ($os $arch)."
 
 # =========
 # Run
