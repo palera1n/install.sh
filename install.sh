@@ -108,6 +108,14 @@ os_name="$os"
 latest_build=$(curl -s "https://api.github.com/repos/palera1n/palera1n/tags" | jq -r '.[].name' | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+(\.[0-9]+)*$" | sort -V | tail -n 1) 
 download_version="$latest_build"
 
+nightly_builds() {
+    url="https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/"
+    nightly_build=0
+    html=$(curl -s "$url")
+    nightly_build=$(echo "$html" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}')
+    export nightly_build
+}
+
 install_path="/usr/local/bin/palera1n"
 
 # =========
@@ -173,10 +181,19 @@ case "$1" in
         choice=$?
         download_version="${options[$choice]}"
     ;;
+    "--nightly"|"-n")
+        nightly_builds
+        info "Use the Up/Down arrow keys to select a release, then press enter to install.\n"
+        options=($nightly_build)
+        release_menu "${options[@]}"
+        choice=$?
+        download_version="${options[$choice]}"
+    ;;
     *)
         download_version="${latest_build}"
     ;;
 esac
+
 
 info "Using release tag ${download_version}."
 info "Fetching palera1n (${download_version}) build for ($os_name $arch)."
@@ -185,15 +202,24 @@ mkdir -p /usr/local/bin
 case "$os" in
     Linux)
         mkdir -p /usr/local/bin
-        curl -Lo $install_path "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-linux-${arch}" > /dev/null 2>&1
+        if [[ $1 == "--nightly" || $1 == "-n" ]]; then
+            curl -Lo $install_path "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/${download_version}/palera1n-linux-${arch}" > /dev/null 2>&1
+        else
+            curl -Lo $install_path "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-linux-${arch}" > /dev/null 2>&1
+        fi
         chmod +x $install_path
     ;;
     Darwin)
         mkdir -p /usr/local/bin
-        curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-macos-${arch}" > /dev/null 2>&1
+        if [[ $1 == "--nightly" || $1 == "-n" ]]; then
+            curl -Lo /usr/local/bin/palera1n "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/${download_version}/palera1n-macos-${arch}" > /dev/null 2>&1
+        else
+            curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-macos-${arch}" > /dev/null 2>&1
+        fi
         chmod +x $install_path
     ;;
 esac
+
 
 if [ -f "$install_path" ]; then
     info "palera1n is now installed at ${install_path}"
