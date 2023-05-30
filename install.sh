@@ -1,5 +1,10 @@
 #!/bin/sh
 
+echo '# == palera1n-c install script =='
+echo '#'
+echo '# Made by: Samara, Staturnz'
+echo '#'
+
 # =========
 # Colors for output text
 # =========
@@ -25,6 +30,7 @@ NO_COLOR='\033[0m'
 alias current_time="date +'%m/%d/%y %H:%M:%S'"
 
 os=$(uname)
+latest_build=$(curl -s "https://api.github.com/repos/palera1n/palera1n/tags" | jq -r '.[].name' | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+(\.[0-9]+)*$" | sort -V | tail -n 1)
 
 case "$os" in
     Linux)
@@ -34,7 +40,7 @@ case "$os" in
         arch_check=$(uname -m)
     ;;
     *)
-        echo " - [${YELLOW}$(current_time)${NO_COLOR}] ${RED}<Error>${NO_COLOR}: ${RED}Unknown or unsupported OS.${NO_COLOR}"
+        echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${RED}<Error>${NO_COLOR}: ${RED}Unknown or unsupported OS.${NO_COLOR}"
         exit 1
     ;;
 esac
@@ -53,10 +59,12 @@ case "$arch_check" in
         arch=armel
     ;;
     *)
-        echo " - [${YELLOW}$(current_time)${NO_COLOR}] ${RED}<Error>${NO_COLOR}: ${RED}Unknown or unsupported architecture.${NO_COLOR}"
+        echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${RED}<Error>${NO_COLOR}: ${RED}Unknown or unsupported architecture.${NO_COLOR}"
         exit 1
     ;;
 esac
+
+echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${LIGHT_CYAN}<Info>${NO_COLOR}: ${LIGHT_CYAN}Found OS type ($os - $arch)${NO_COLOR}"
 
 # =========
 # Check if id is 0
@@ -64,15 +72,26 @@ esac
 
 [ "$os" = "Linux" ] && {
     [[ $(grep -i Microsoft /proc/version) ]] && {
-        echo " - [${YELLOW}$(current_time)${NO_COLOR}] ${RED}<Error>${NO_COLOR}: ${RED}WSL is not supported in this install script.${NO_COLOR}"
+        echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${RED}<Error>${NO_COLOR}: ${RED}WSL is not supported in this install script.${NO_COLOR}"
     }
 }
 
 [ "$(id -u)" -ne 0 ] && {
-    echo " - [${YELLOW}$(current_time)${NO_COLOR}] ${YELLOW}<Warning>${NO_COLOR}: ${YELLOW}In order to use this script, run with root or use sudo.${NO_COLOR}"
+    echo " - [${DARK_GRAY}$(current_time)${NO_COLOR}] ${YELLOW}<Warning>${NO_COLOR}: ${YELLOW}In order to use this script, run with root or use sudo.${NO_COLOR}"
     exit 1
 }
 
 # =========
 # Run
 # =========
+
+case "$os" in
+    Linux)
+        mkdir -p /usr/local/bin
+        curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${latest_build}/palera1n-linux-${arch}"
+    ;;
+    Darwin)
+        mkdir -p /usr/local/bin
+        curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${latest_build}/palera1n-macos-universal"
+    ;;
+esac
