@@ -182,6 +182,19 @@ esac
 info "Found OS type ($os_name $arch)."
 
 # =========
+# Dependancies
+# =========
+
+case "$os" in
+    Linux)
+        if !which curl >/dev/null 2>&1; then
+            warning "If you want to use this script, please install curl."
+            exit 1
+        fi
+    ;;
+esac
+
+# =========
 # Run
 # =========
 
@@ -240,10 +253,10 @@ if [ -f "$install_path" ]; then
         exit 1
     fi
 
-    info "palera1n is now installed at ${install_path}"
+    info "palera1n is now installed at ${install_path}, you can now run palera1n."
 else 
     error "palera1n failed to install. Please check your internet connection and try again."
     exit 1
 fi
 
-info "For steps on how continue please refer to https://ios.cfw.guide/installing-palera1n/"
+info "For more information and steps please refer to: https://ios.cfw.guide/installing-palera1n/"
