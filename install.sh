@@ -107,16 +107,25 @@ os_name="$os"
 
 latest_build=$(curl -s "https://api.github.com/repos/palera1n/palera1n/tags" | jq -r '.[].name' | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+(\.[0-9]+)*$" | sort -V | tail -n 1) 
 download_version="$latest_build"
+install_path="/usr/local/bin/palera1n"
 
 nightly_builds() {
     url="https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/"
     nightly_build=0
     html=$(curl -s "$url")
-    nightly_build=$(echo "$html" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}')
+    nightly_build=$(curl -s "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}' | sed 's/^/Build-/')
     export nightly_build
 }
 
-install_path="/usr/local/bin/palera1n"
+download() {
+    download_url=$(echo "$1")
+    status=$(curl --write-out %{http_code} -sLo $install_path "$(echo "$1")")
+
+    if [[ "$status" -ne 200 ]]; then
+        error "palera1n failed to download. Please check your internet connection and try again. (Status: $status)"
+        exit 1
+    fi
+}
 
 # =========
 # OS and Architecture
@@ -128,24 +137,25 @@ case "$os" in
         os_name="Linux"
     ;;
     Darwin)
-        if [[ "$(uname -r | cut -d. -f1)" -gt "16" ]]; then
+        if [[ "$(uname -r | cut -d. -f1)" -gt "15" ]]; then
             os_name="macOS"
         elif [[ "$(uname -m)" == "iPhone"* ]] || [[ "$(uname -m)" == "iPad"* ]]; then
-            error "Device seems like either an iPhone or iPad, aborting..."
+            error "palera1n install script is not meant to used on iOS devices. Please use on a PC."
             exit 1
         else
             os_name="Mac OS X"
         fi
+        arch_check=$(uname -m)
     ;;
     *)
-        error "Unknown or unsupported OS."
+        error "Unknown or unsupported OS ($os)."
         exit 1
     ;;
 esac
 
 [ "$os" = "Linux" ] && {
     grep -qi Microsoft /proc/version > /dev/null 2>&1 && {
-        error "Windows not really using for manipulating OSX images, compiled in mingw tool for this working unstable and incorrectly."
+        error "palera1n is not supported on WSL. Please use another supported platform."
         exit 1
     }
 }
@@ -164,7 +174,7 @@ case "$arch_check" in
         arch=armel
     ;;
     *)
-        error "Unknown or unsupported architecture."
+        error "Unknown or unsupported architecture ($arch_check)."
         exit 1
     ;;
 esac
@@ -182,6 +192,7 @@ case "$1" in
         release_menu "${options[@]}"
         choice=$?
         download_version="${options[$choice]}"
+        info "Using release tag ${download_version}."
     ;;
     "--nightly"|"-n")
         nightly_builds
@@ -189,43 +200,50 @@ case "$1" in
         options=($nightly_build)
         release_menu "${options[@]}"
         choice=$?
-        download_version="${options[$choice]}"
+        download_version=$(echo "${options[$choice]}" | sed 's/Build-//')
+        info "Using nightly build ${download_version}."
+        prefix="nightly-"
     ;;
     *)
         download_version="${latest_build}"
+        info "Using release tag ${download_version}."
     ;;
 esac
 
-
-info "Using release tag ${download_version}."
-info "Fetching palera1n (${download_version}) build for ($os_name $arch)."
-
+info "Fetching palera1n (${prefix}${download_version}) build for ($os_name $arch)."
 mkdir -p /usr/local/bin
+
 case "$os" in
     Linux)
-        mkdir -p /usr/local/bin
         if [[ $1 == "--nightly" || $1 == "-n" ]]; then
-            curl -Lo $install_path "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/${download_version}/palera1n-linux-${arch}" > /dev/null 2>&1
+            download "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/${download_version}/palera1n-linux-${arch}"
         else
-            curl -Lo $install_path "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-linux-${arch}" > /dev/null 2>&1
+            download"https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-linux-${arch}"
         fi
-        chmod +x $install_path
     ;;
     Darwin)
-        mkdir -p /usr/local/bin
         if [[ $1 == "--nightly" || $1 == "-n" ]]; then
-            curl -Lo /usr/local/bin/palera1n "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/${download_version}/palera1n-macos-${arch}" > /dev/null 2>&1
+            download "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/${download_version}/palera1n-macos-${arch}"
         else
-            curl -Lo /usr/local/bin/palera1n "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-macos-${arch}" > /dev/null 2>&1
+            download "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-macos-${arch}"
         fi
-        chmod +x $install_path
     ;;
 esac
 
 
 if [ -f "$install_path" ]; then
+    chmod +x $install_path
+    palera1n --version  > /dev/null 2>&1
+    
+    if [[ "$(echo $?)" -ne "0" ]]; then
+        error "palera1n installation is corrupted. Please check your internet connection and try again."
+        exit 1
+    fi
+
     info "palera1n is now installed at ${install_path}"
 else 
     error "palera1n failed to install. Please check your internet connection and try again."
     exit 1
 fi
+
+info "For steps on how continue please refer to https://ios.cfw.guide/installing-palera1n/"
