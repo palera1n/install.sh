@@ -128,9 +128,11 @@ case "$os" in
         os_name="Linux"
     ;;
     Darwin)
-        arch_check=$(uname -m)
         if [[ "$(uname -r | cut -d. -f1)" -gt "16" ]]; then
             os_name="macOS"
+        elif [[ "$(uname -m)" == "iPhone"* ]] || [[ "$(uname -m)" == "iPad" ]]; then
+            echo "Device seems like either an iPhone or iPad, aborting..."
+            exit 1
         else
             os_name="Mac OS X"
         fi
@@ -143,7 +145,7 @@ esac
 
 [ "$os" = "Linux" ] && {
     [[ $(grep -i Microsoft /proc/version) ]] && {
-        error "WSL is not supported in this install script."
+        error "Windows not really using for manipulating OSX images, compiled in mingw tool for this working unstable and incorrectly."
         exit 1
     }
 }
