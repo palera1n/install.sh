@@ -56,7 +56,7 @@ warning() {
 # Release version menu
 # =========
 
-function release_menu {
+release_menu() {
     ESC=$(printf "\033")
     on()          { printf "$ESC[?25h"; }
     off()         { printf "$ESC[?25l"; }
@@ -105,7 +105,7 @@ function release_menu {
 os=$(uname)
 os_name="$os"
 
-latest_build=$(curl -s "https://api.github.com/repos/palera1n/palera1n/tags" | jq -r '.[].name' | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+(\.[0-9]+)*$" | sort -V | tail -n 1) 
+latest_build=$(curl -s "https://api.github.com/repos/palera1n/palera1n/tags" | awk -F '"' '/"name": "v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+(\.[0-9]+)*"$/{print $4}' | sort -V | tail -n 1)
 download_version="$latest_build"
 install_path="/usr/local/bin/palera1n"
 
