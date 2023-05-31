@@ -144,7 +144,7 @@ case "$os" in
 esac
 
 [ "$os" = "Linux" ] && {
-    [[ $(grep -i Microsoft /proc/version) ]] && {
+    grep -qi Microsoft /proc/version > /dev/null 2>&1 && {
         error "Windows not really using for manipulating OSX images, compiled in mingw tool for this working unstable and incorrectly."
         exit 1
     }
