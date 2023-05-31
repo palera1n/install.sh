@@ -187,9 +187,9 @@ info "Found OS type ($os_name $arch)."
 
 case "$os" in
     Linux)
-        if !which curl >/dev/null 2>&1; then
-            warning "If you want to use this script, please install curl."
-            exit 1
+        if ! command -v curl >/dev/null 2>&1; then
+            echo "If you want to use this script, please install curl."
+            # exit 1
         fi
     ;;
 esac
