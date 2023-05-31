@@ -130,8 +130,8 @@ case "$os" in
     Darwin)
         if [[ "$(uname -r | cut -d. -f1)" -gt "16" ]]; then
             os_name="macOS"
-        elif [[ "$(uname -m)" == "iPhone"* ]] || [[ "$(uname -m)" == "iPad" ]]; then
-            echo "Device seems like either an iPhone or iPad, aborting..."
+        elif [[ "$(uname -m)" == "iPhone"* ]] || [[ "$(uname -m)" == "iPad"* ]]; then
+            error "Device seems like either an iPhone or iPad, aborting..."
             exit 1
         else
             os_name="Mac OS X"
