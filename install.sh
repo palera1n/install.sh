@@ -45,21 +45,21 @@ warning() {
 # Release version menu
 # =========
 
-release_build="v2.0.0-b5 v2.0.0-b6 v2.0.0-b7"
-nightly_build=$(curl -s "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}' | sed 's/^/Build-/' | tr '\n' ' ')
+release_build=$(curl -s "https://cdn.nickchan.lol/palera1n/c-rewrite/releases/" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}' | awk '!/v2\.0\.0-beta\.[1-4]/' | tr '\n' ' ')
+nightly_build=$(curl -s "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}' | sed 's/^/\tNightly-/' | tr '\n' ' ')
 download_version="v2.0.0-beta.7"
 
 menu() {
     info "Please select the version of palera1n you want to install below."
     IFS=' '; export IFS; set -- $1; i=1; echo '';
-    echo " ╭──────────────╮ "
+    echo " ╭──────────────────╮ "
 
     while [ "$i" -ne "$(($# + 1))" ]
         do
             echo " │ $(eval echo "$i\) \$$i") │ "
             i=$((i + 1))
         done;
-        echo " ╰──────────────╯ "; echo ''
+        echo " ╰──────────────────╯ "; echo ''
 
     printf '%s' "Select a release (1-$#): " >&2
     read -r option
@@ -118,6 +118,7 @@ esac
 [ "$os" = "Linux" ] && {
     grep -qi Microsoft /proc/version > /dev/null 2>&1 && {
         error "palera1n is not supported on WSL. Please use another supported platform."
+        error "Windows not really using for manipulating OSX images, compiled in mingw tool for this working unstable and incorrectly."
         exit 1
     }
 }
@@ -164,16 +165,14 @@ esac
 case "$1" in
     "--list"|"-l")
         menu "$release_build"
-        case "$download_version" in
-            v2.0.0-b5) download_version="v2.0.0-beta.5";;
-            v2.0.0-b6) download_version="v2.0.0-beta.6.2";;
-            v2.0.0-b7) download_version="v2.0.0-beta.7";;
-        esac
+        download_version=$(echo "$download_version" | sed 's/Build-//')
+        echo
         info "Using release tag ${download_version}."
     ;;
     "--nightly"|"-n")
         menu "$nightly_build"
-        download_version=$(echo "$download_version" | sed 's/Build-//')
+        download_version=$(echo "$download_version" | sed 's/\tNightly-//')
+        echo
         info "Using nightly build ${download_version}."
         prefix="nightly-"
     ;;
