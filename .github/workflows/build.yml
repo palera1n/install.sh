@@ -1,0 +1,36 @@
+name: Run Makefile
+
+on:
+  push:
+
+  pull_request:
+
+  workflow_dispatch:
+    
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Install dependencies (packages)
+        run: |
+          brew install shellcheck
+
+      - name: Shellcheck
+        run: |
+          chmod +x install.sh
+          shellcheck -S warning install.sh
+
+      - name: Upload artifact
+        uses: wangyucode/sftp-upload-action@v1.4.8
+        with:
+          host: ${{ secrets.STATIC_FTP_HOST }}
+          port: 22
+          username: static
+          password: ${{ secrets.STATIC_FTP_PASS }}
+          forceUpload: true
+          dryRun: false
+          localDir: 'install.sh'
+          remoteDir: '/scripts'
