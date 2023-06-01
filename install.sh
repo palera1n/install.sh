@@ -42,6 +42,36 @@ warning() {
 }
 
 # =========
+# Variables
+# =========
+
+os=$(uname)
+os_name="$os"
+install_path="/usr/local/bin/palera1n"
+
+download() {
+    status=$(curl --write-out '%{http_code}' -sLo $install_path "$1")
+
+    if [ "$status" -ne 200 ]; then
+        error "palera1n failed to download. Please check your internet connection and try again. (Status: $status)"
+        exit 1
+    fi
+}
+
+# =========
+# Dependancies
+# =========
+
+case "$os" in
+    Linux)
+        if ! command -v curl >/dev/null 2>&1; then
+            error "If you want to use this script, please install curl."
+            exit 1
+        fi
+    ;;
+esac
+
+# =========
 # Release version menu
 # =========
 
@@ -69,23 +99,6 @@ menu() {
         exit 1
     else 
         download_version="$(eval echo "\$$option")"
-    fi
-}
-
-# =========
-# Variables
-# =========
-
-os=$(uname)
-os_name="$os"
-install_path="/usr/local/bin/palera1n"
-
-download() {
-    status=$(curl --write-out '%{http_code}' -sLo $install_path "$1")
-
-    if [ "$status" -ne 200 ]; then
-        error "palera1n failed to download. Please check your internet connection and try again. (Status: $status)"
-        exit 1
     fi
 }
 
@@ -143,19 +156,6 @@ case "$arch_check" in
 esac
 
 info "Found OS type ($os_name $arch)."
-
-# =========
-# Dependancies
-# =========
-
-case "$os" in
-    Linux)
-        if ! command -v curl >/dev/null 2>&1; then
-            echo "If you want to use this script, please install curl."
-            # exit 1
-        fi
-    ;;
-esac
 
 # =========
 # Run
