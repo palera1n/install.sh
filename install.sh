@@ -1,14 +1,11 @@
 #!/bin/sh
+
 printf "\033c"
 echo '# == palera1n-c install script =='
 echo '#'
 echo '# Made by: Samara, Staturnz'
 echo '#'
 echo ''
-
-# =========
-# Colors for output text
-# =========
 
 RED='\033[0;31m'
 YELLOW='\033[0;33m'
@@ -58,6 +55,17 @@ download() {
     fi
 }
 
+print_help() {
+    cat << EOF
+Usage: $0 [Options]
+
+Options:
+    -h, --help          Print this help
+    -l, --list          List release builds of palera1n 
+    -n, --nightly       List nightly builds of palera1n 'Advanced users only'
+EOF
+}
+
 # =========
 # Dependancies
 # =========
@@ -74,10 +82,6 @@ esac
 # =========
 # Release version menu
 # =========
-
-release_build=$(curl -s "https://cdn.nickchan.lol/palera1n/c-rewrite/releases/" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}' | awk '!/v2\.0\.0-beta\.[1-4]/' | tr '\n' ' ')
-nightly_build=$(curl -s "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}' | sed 's/^/\tNightly-/' | tr '\n' ' ')
-download_version="v2.0.0-beta.7"
 
 menu() {
     info "Please select the version of palera1n you want to install below."
@@ -155,34 +159,61 @@ case "$arch_check" in
     ;;
 esac
 
-info "Found OS type ($os_name $arch)."
-
 # =========
-# Run
+# palera1n Builds and args
 # =========
 
+fetch_release_build() {
+    curl -s "https://cdn.nickchan.lol/palera1n/c-rewrite/releases/" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}' | awk '!/v2\.0\.0-beta\.[1-4]/' | tr '\n' ' '
+}
+
+fetch_nightly_build() {
+    curl -s "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}' | sed 's/^/\tNightly-/' | tr '\n' ' '
+}
 
 case "$1" in
-    "--list"|"-l")
+    "--list" | "-l" | "--nightly" | "-n" | "--help" | "-h" );;
+    *)
+        error "Invalid option: \"$1\""
+        exit 1
+        ;;
+esac
+
+case "$1" in
+    "--list" | "-l")
+        release_build=$(fetch_release_build)
         menu "$release_build"
         download_version=$(echo "$download_version" | sed 's/Build-//')
         echo
         info "Using release tag ${download_version}."
     ;;
-    "--nightly"|"-n")
+    "--nightly" | "-n")
+        nightly_build=$(fetch_nightly_build)
         menu "$nightly_build"
         download_version=$(echo "$download_version" | sed 's/\tNightly-//')
         echo
         info "Using nightly build ${download_version}."
         prefix="nightly-"
     ;;
+    "--help" | "-h")
+        print_help
+        exit 1
+    ;;
     *)
+        download_version="v2.0.0-beta.7"
         info "Using release tag ${download_version}."
     ;;
 esac
 
+info "Found OS type ($os_name $arch)."
+
+# =========
+# Run
+# =========
+
 info "Fetching palera1n (${prefix}${download_version}) build for ($os_name $arch)."
 mkdir -p /usr/local/bin
+rm /usr/local/bin/palera1n > /dev/null 2>&1
 
 case "$os" in
     Linux)
