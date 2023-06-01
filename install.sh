@@ -172,8 +172,9 @@ fetch_nightly_build() {
 }
 
 case "$1" in
-    "--list" | "-l" | "--nightly" | "-n" | "--help" | "-h" );;
-    *)
+    "" ) ;;
+    "--list" | "-l" | "--nightly" | "-n" | "--help" | "-h" ) ;;
+    * )
         error "Invalid option: \"$1\""
         exit 1
         ;;
