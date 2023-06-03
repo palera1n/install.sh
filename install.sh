@@ -88,12 +88,15 @@ menu() {
     IFS=' '; export IFS; set -- $1; i=1; echo '';
     echo " ╭──────────────────╮ "
 
-    while [ "$i" -ne "$(($# + 1))" ]
-        do
+    while [ "$i" -ne "$(($# + 1))" ]; do
+        if [ "$i" -eq 10 ]; then
+            echo " │ 10) ${10} │ "
+        else
             echo " │ $(eval echo "$i\) \$$i") │ "
-            i=$((i + 1))
-        done;
-        echo " ╰──────────────────╯ "; echo ''
+        fi
+        i=$((i + 1))
+    done;
+    echo " ╰──────────────────╯ "; echo ''
 
     printf '%s' "Select a release (1-$#): " >&2
     read -r option
@@ -105,6 +108,7 @@ menu() {
         download_version="$(eval echo "\$$option")"
     fi
 }
+
 
 # =========
 # OS and Architecture
