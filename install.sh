@@ -89,10 +89,11 @@ menu() {
     echo " ╭──────────────────╮ "
 
     while [ "$i" -ne "$(($# + 1))" ]; do
-        if [ "$i" -eq 10 ]; then
-            echo " │ 10) ${10} │ "
+        current_option="$(eval echo \"\$$i\")"
+        if [ "$i" -ge 10 ]; then
+            echo " │ $i) $current_option │ "
         else
-            echo " │ $i) $(eval echo \"\$$i\") │ "
+            printf " │ %d) %s │ \n" "$i" "$current_option"
         fi
         i=$((i + 1))
     done;
@@ -102,16 +103,13 @@ menu() {
     read -r option
 
     if [ "$option" -gt "$#" ] || [ "$option" -lt "1" ]; then
-        error "Invalid option please try again."
+        error "Invalid option, please try again."
         exit 1
-    else 
-        if [ "$option" -eq 10 ]; then
-            download_version="${10}"
-        else
-            download_version="$(eval echo \"\$$option\")"
-        fi
+    else
+        download_version="$(eval echo \"\${$option}\")"
     fi
 }
+
 
 
 
