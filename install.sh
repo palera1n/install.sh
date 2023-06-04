@@ -57,7 +57,7 @@ download() {
 
 print_help() {
     cat << EOF
-Usage: $0 [Options]
+Usage: $0 [-hln]
 
 Options:
     -h, --help          Print this help
@@ -89,9 +89,9 @@ menu() {
     echo " ╭──────────────────╮ "
 
     while [ "$i" -ne "$(($# + 1))" ]; do
-        current_option="$(eval echo \"\$$i\")"
+        current_option="$(eval "echo \${$i}")"
         if [ "$i" -ge 10 ]; then
-            echo " │ $i) $current_option │ "
+            echo " │ $i)  $current_option │ "
         else
             printf " │ %d) %s │ \n" "$i" "$current_option"
         fi
@@ -106,7 +106,7 @@ menu() {
         error "Invalid option, please try again."
         exit 1
     else
-        download_version="$(eval echo \"\${$option}\")"
+        download_version="$(eval "echo \${$option}")"
     fi
 }
 

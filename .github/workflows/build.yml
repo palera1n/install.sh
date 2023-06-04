@@ -18,6 +18,7 @@ jobs:
 
       - name: Shellcheck
         run: |
+          shellcheck -S warning install.sh
           chmod +x install.sh
 
       - name: Upload artifact
