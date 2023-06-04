@@ -1,4 +1,4 @@
-name: Run Makefile
+name: Upload Script
 
 on:
   push:
