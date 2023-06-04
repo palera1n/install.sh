@@ -19,7 +19,9 @@ jobs:
       - name: Shellcheck
         run: |
           shellcheck -S warning install.sh
-          chmod +x install.sh
+          mkdir upload
+          mv install.sh upload/install.sh
+          chmod +x upload/install.sh
 
       - name: Upload artifact
         uses: wangyucode/sftp-upload-action@v1.4.8
@@ -30,5 +32,5 @@ jobs:
           password: ${{ secrets.STATIC_FTP_PASS }}
           forceUpload: true
           dryRun: false
-          localDir: 'install.sh'
-          remoteDir: '/'
+          localDir: 'upload/'
+          remoteDir: '.'
