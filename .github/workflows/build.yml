@@ -34,3 +34,4 @@ jobs:
           dryRun: false
           localDir: 'upload/'
           remoteDir: '/scripts'
+          exclude: '.cache*,.cache/,.DS_Store' 
