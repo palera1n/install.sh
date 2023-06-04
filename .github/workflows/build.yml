@@ -31,4 +31,4 @@ jobs:
           forceUpload: true
           dryRun: false
           localDir: 'install.sh'
-          remoteDir: '/scripts'
+          remoteDir: '/'
