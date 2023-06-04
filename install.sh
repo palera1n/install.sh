@@ -92,7 +92,7 @@ menu() {
         if [ "$i" -eq 10 ]; then
             echo " │ 10) ${10} │ "
         else
-            echo " │ $(eval echo "$i\) \$$i") │ "
+            echo " │ $i) $(eval echo \"\$$i\") │ "
         fi
         i=$((i + 1))
     done;
@@ -105,9 +105,14 @@ menu() {
         error "Invalid option please try again."
         exit 1
     else 
-        download_version="$(eval echo "\$$option")"
+        if [ "$option" -eq 10 ]; then
+            download_version="${10}"
+        else
+            download_version="$(eval echo \"\$$option\")"
+        fi
     fi
 }
+
 
 
 # =========
