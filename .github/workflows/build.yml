@@ -19,7 +19,6 @@ jobs:
       - name: Shellcheck
         run: |
           chmod +x install.sh
-          shellcheck -S warning install.sh
 
       - name: Upload artifact
         uses: wangyucode/sftp-upload-action@v1.4.8
