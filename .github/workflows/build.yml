@@ -33,4 +33,4 @@ jobs:
           forceUpload: true
           dryRun: false
           localDir: 'upload/'
-          remoteDir: '.'
+          remoteDir: '/scripts'
