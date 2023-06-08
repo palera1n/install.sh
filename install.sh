@@ -1,11 +1,11 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
-printf "\033c"
-echo '# == palera1n-c install script =='
-echo '#'
-echo '# Made by: Samara, Staturnz'
-echo '#'
-echo ''
+printf '%b' "\033c"
+printf '%s\n' '# == palera1n-c install script =='
+printf '%s\n' '#'
+printf '%s\n' '# Made by: Samara, Staturnz'
+printf '%s\n' '#'
+printf '%s\n' ''
 
 RED='\033[0;31m'
 YELLOW='\033[0;33m'
@@ -20,15 +20,16 @@ BOLD='\033[1m'
 # =========
 
 error() {
-    echo " - [${DARK_GRAY}$(date +'%m/%d/%y %H:%M:%S')${NO_COLOR}] ${RED}${BOLD}<Error>${NO_COLOR}: ${RED}$1${NO_COLOR}"
+    printf '%b\n' " - [${DARK_GRAY}$(date +'%m/%d/%y %H:%M:%S')${NO_COLOR}] ${RED}${BOLD}<Error>${NO_COLOR}: ${RED}$1${NO_COLOR}"
 }
 
 info() {
-    echo " - [${DARK_GRAY}$(date +'%m/%d/%y %H:%M:%S')${NO_COLOR}] ${LIGHT_CYAN}${BOLD}<Info>${NO_COLOR}: ${DARK_CYAN}$1${NO_COLOR}"
+    printf '%b\n' " - [${DARK_GRAY}$(date +'%m/%d/%y %H:%M:%S')${NO_COLOR}] ${LIGHT_CYAN}${BOLD}<Info>${NO_COLOR}: ${DARK_CYAN}$1${NO_COLOR}"
+
 }
 
 warning() {
-    echo " - [${DARK_GRAY}$(date +'%m/%d/%y %H:%M:%S')${NO_COLOR}] ${YELLOW}${BOLD}<Warning>${NO_COLOR}: ${YELLOW}$1${NO_COLOR}"
+    printf '%b\n' " - [${DARK_GRAY}$(date +'%m/%d/%y %H:%M:%S')${NO_COLOR}] ${YELLOW}${BOLD}<Warning>${NO_COLOR}: ${YELLOW}$1${NO_COLOR}"
 }
 
 # =========
@@ -87,19 +88,15 @@ esac
 
 menu() {
     info "Please select the version of palera1n you want to install below."
-    IFS=' '; export IFS; set -- $1; i=1; echo '';
-    echo " ╭──────────────────╮ "
+    IFS=' '; export IFS; set -- $1; i=1; printf '%s\n' "";
+    printf '%s\n' " ╭──────────────────╮ "
 
     while [ "$i" -ne "$(($# + 1))" ]; do
-        current_option="$(eval "echo \${$i}")"
-        if [ "$i" -ge 10 ]; then
-            echo " │ $i)  $current_option │ "
-        else
-            printf " │ %d) %s │ \n" "$i" "$current_option"
-        fi
+        current_option="$(eval "printf '%b' "\${$i}"")"
+        printf " │ %d) %s │ \n" "$i" "$current_option"
         i=$((i + 1))
     done;
-    echo " ╰──────────────────╯ "; echo ''
+    printf '%s\n' " ╰──────────────────╯ "; printf '%s\n' ''
 
     printf '%s' "Select a release (1-$#): " >&2
     read -r option
@@ -108,12 +105,9 @@ menu() {
         error "Invalid option, please try again."
         exit 1
     else
-        download_version="$(eval "echo \${$option}")"
+        download_version="$(eval "printf '%b' "\${$option}"")"
     fi
 }
-
-
-
 
 # =========
 # OS and Architecture
@@ -193,15 +187,15 @@ case "$1" in
     "--list" | "-l")
         release_build=$(fetch_release_build)
         menu "$release_build"
-        download_version=$(echo "$download_version" | sed 's/Build-//')
-        echo
+        download_version=$(printf '%s' "$download_version" | sed 's/Build-//')
+        printf '%s\n' ""
         info "Using release tag ${download_version}."
     ;;
     "--nightly" | "-n")
         nightly_build=$(fetch_nightly_build)
         menu "$nightly_build"
-        download_version=$(echo "$download_version" | sed 's/\tNightly-//')
-        echo
+        download_version=$(printf '%s' "$download_version" | sed 's/\tNightly-//')
+        printf '%s\n' ""
         info "Using nightly build ${download_version}."
         prefix="nightly-"
     ;;
