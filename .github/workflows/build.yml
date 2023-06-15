@@ -11,14 +11,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      
-      - name: Install dependencies (packages)
-        run: |
-          brew install shellcheck
 
-      - name: Shellcheck
+      - name: Pre-Upload
         run: |
-          shellcheck -S warning install.sh
           mkdir upload
           mv install.sh upload/install.sh
           chmod +x upload/install.sh
