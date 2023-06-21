@@ -79,10 +79,6 @@ case "$os" in
             error "If you want to use this script, please install curl."
             exit 1
         fi
-	if ! command -v arch >/dev/null 2>&1; then
-            error "If you want to use this script, please install coreutils."
-            exit 1
-        fi
     ;;
 esac
 
@@ -119,7 +115,7 @@ menu() {
 
 case "$os" in
     Linux)
-        arch_check=$(arch)
+        arch_check=$(uname -m)
         os_name="Linux"
     ;;
     Darwin)
