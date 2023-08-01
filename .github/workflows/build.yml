@@ -23,7 +23,7 @@ jobs:
         with:
           host: ${{ secrets.STATIC_FTP_HOST }}
           port: ${{ secrets.STATIC_FTP_PORT }}
-          username: scripts
+          username: static
           password: ${{ secrets.STATIC_FTP_PASS }}
           forceUpload: true
           dryRun: false
