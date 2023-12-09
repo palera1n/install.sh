@@ -60,12 +60,13 @@ download() {
 
 print_help() {
     cat << EOF
-Usage: $0 [-hln]
+Usage: $0 [-hlnr]
 
 Options:
     -h, --help          Print this help
     -l, --list          List release builds of palera1n 
     -n, --nightly       List nightly builds of palera1n 'Advanced users only'
+    -r, --remove        Uninstall palera1n
 EOF
 }
 
@@ -174,9 +175,19 @@ fetch_nightly_build() {
     curl -s "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}' | sed 's/^/\tNightly-/' | tr '\n' ' '
 }
 
+remove_palera1n() {
+    if [ -e "${install_path}" ]; then
+        rm ${install_path}
+        info "palera1n was successfully removed from ${install_path}."
+    else
+        error "palera1n is not installed at ${install_path}."
+        exit 1
+    fi
+}
+
 case "$1" in
     "" ) ;;
-    "--list" | "-l" | "--nightly" | "-n" | "--help" | "-h" ) ;;
+    "--list" | "-l" | "--nightly" | "-n" | "-r" | "--remove" | "--help" | "-h" ) ;;
     * )
         error "Invalid option: \"$1\""
         exit 1
@@ -198,6 +209,10 @@ case "$1" in
         printf '%s\n' ""
         info "Using nightly build ${download_version}."
         prefix="nightly-"
+    ;;
+    "--remove" | "-r")
+        remove_palera1n
+        exit 0
     ;;
     "--help" | "-h")
         print_help
