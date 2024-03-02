@@ -219,7 +219,7 @@ case "$1" in
         exit 1
     ;;
     *)
-        download_version="v2.0.0-beta.8"
+        download_version="v2.0.0-beta.9"
         info "Using release tag ${download_version}."
     ;;
 esac
