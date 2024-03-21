@@ -1,10 +1,12 @@
 #!/usr/bin/env sh
 
 printf '%b' "\033c"
-printf '%s\n' '# == palera1n-c install script =='
 printf '%s\n' '#'
-printf '%s\n' '# Made by: Samara, Staturnz'
+printf '%s\n' '# palera1n install script'
 printf '%s\n' '#'
+printf '%s\n' '# ========  Made by  ======='
+printf '%s\n' '# Samara, Staturnz'
+printf '%s\n' '# =========================='
 printf '%s\n' ''
 
 RED='\033[0;31m'
@@ -58,14 +60,22 @@ download() {
     fi
 }
 
+remove_palera1n() {
+    if [ -e "${install_path}" ]; then
+        rm ${install_path}
+        info "palera1n was successfully removed from ${install_path}."
+    else
+        error "palera1n is not installed at ${install_path}."
+        exit 1
+    fi
+}
+
 print_help() {
     cat << EOF
 Usage: $0 [-hlnr]
 
 Options:
     -h, --help          Print this help
-    -l, --list          List release builds of palera1n 
-    -n, --nightly       List nightly builds of palera1n 'Advanced users only'
     -r, --remove        Uninstall palera1n
 EOF
 }
@@ -82,33 +92,6 @@ case "$os" in
         fi
     ;;
 esac
-
-# =========
-# Release version menu
-# =========
-
-menu() {
-    info "Please select the version of palera1n you want to install below."
-    IFS=' '; export IFS; set -- $1; i=1; printf '%s\n' "";
-    printf '%s\n' " ╭──────────────────╮ "
-
-    while [ "$i" -ne "$(($# + 1))" ]; do
-        current_option="$(eval "printf '%b' "\${$i}"")"
-        printf " │ %d) %s │ \n" "$i" "$current_option"
-        i=$((i + 1))
-    done;
-    printf '%s\n' " ╰──────────────────╯ "; printf '%s\n' ''
-
-    printf '%s' "Select a release (1-$#): " >&2
-    read -r option
-
-    if [ "$option" -gt "$#" ] || [ "$option" -lt "1" ]; then
-        error "Invalid option, please try again."
-        exit 1
-    else
-        download_version="$(eval "printf '%b' "\${$option}"")"
-    fi
-}
 
 # =========
 # OS and Architecture
@@ -164,30 +147,12 @@ case "$arch_check" in
 esac
 
 # =========
-# palera1n Builds and args
+# Args
 # =========
-
-fetch_release_build() {
-    curl -s "https://cdn.nickchan.lol/palera1n/c-rewrite/releases/" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}' | awk '!/v2\.0\.0-beta\.[1-4]/' | tr '\n' ' '
-}
-
-fetch_nightly_build() {
-    curl -s "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/" | awk -F'href="' '!/\.+\// && $2{print $2}' | awk -F'/' 'NF>1{print $1}' | sed 's/^/\tNightly-/' | tr '\n' ' '
-}
-
-remove_palera1n() {
-    if [ -e "${install_path}" ]; then
-        rm ${install_path}
-        info "palera1n was successfully removed from ${install_path}."
-    else
-        error "palera1n is not installed at ${install_path}."
-        exit 1
-    fi
-}
 
 case "$1" in
     "" ) ;;
-    "--list" | "-l" | "--nightly" | "-n" | "-r" | "--remove" | "--help" | "-h" ) ;;
+    "-r" | "--remove" | "--help" | "-h" ) ;;
     * )
         error "Invalid option: \"$1\""
         exit 1
@@ -195,21 +160,6 @@ case "$1" in
 esac
 
 case "$1" in
-    "--list" | "-l")
-        release_build=$(fetch_release_build)
-        menu "$release_build"
-        download_version=$(printf '%s' "$download_version" | sed 's/Build-//')
-        printf '%s\n' ""
-        info "Using release tag ${download_version}."
-    ;;
-    "--nightly" | "-n")
-        nightly_build=$(fetch_nightly_build)
-        menu "$nightly_build"
-        download_version=$(printf '%s' "$download_version" | sed 's/\tNightly-//')
-        printf '%s\n' ""
-        info "Using nightly build ${download_version}."
-        prefix="nightly-"
-    ;;
     "--remove" | "-r")
         remove_palera1n
         exit 0
@@ -219,7 +169,7 @@ case "$1" in
         exit 1
     ;;
     *)
-        download_version="v2.0.0-beta.9"
+        download_version=$(curl -s https://api.github.com/repos/palera1n/palera1n/releases | grep -m 1 -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//')
         info "Using release tag ${download_version}."
     ;;
 esac
@@ -236,18 +186,10 @@ rm /usr/local/bin/palera1n > /dev/null 2>&1
 
 case "$os" in
     Linux)
-        if [ "$1" = "--nightly" ] || [ "$1" = "-n" ]; then
-            download "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/${download_version}/palera1n-linux-${arch}"
-        else
-            download "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-linux-${arch}"
-        fi
+        download "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-linux-${arch}"
     ;;
     Darwin)
-        if [ "$1" = "--nightly" ] || [ "$1" = "-n" ]; then
-            download "https://cdn.nickchan.lol/palera1n/artifacts/c-rewrite/main/${download_version}/palera1n-macos-${arch}"
-        else
-            download "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-macos-${arch}"
-        fi
+        download "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-macos-${arch}"
     ;;
 esac
 
@@ -260,10 +202,8 @@ if [ -f "$install_path" ]; then
         exit 1
     fi
 
-    info "palera1n is now installed at ${install_path}, you can now run palera1n."
+    info "palera1n is now installed at ${install_path}."
 else 
     error "palera1n failed to install. Please check your internet connection and try again."
     exit 1
 fi
-
-info "For more information and steps please refer to: https://ios.cfw.guide/installing-palera1n/"
