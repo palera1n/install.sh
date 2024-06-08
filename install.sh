@@ -50,9 +50,10 @@ warning() {
 os=$(uname)
 os_name="$os"
 install_path="/usr/local/bin/palera1n"
+china="$(echo $LANG | grep -q CN && echo 1)"
 
 download() {
-    status=$(curl --write-out '%{http_code}' -sLo $install_path "$1")
+    status=$(curl --progress-bar --write-out '%{http_code}' -Lo $install_path "$1")
 
     if [ "$status" -ne 200 ]; then
         error "palera1n failed to download. Please check your internet connection and try again. (Status: $status)"
@@ -169,7 +170,11 @@ case "$1" in
         exit 1
     ;;
     *)
-        download_version=$(curl -s https://api.github.com/repos/palera1n/palera1n/releases | grep -m 1 -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//')
+	if [ "$china" = "1" ]; then
+	        download_version=$(curl -s https://cdn.nickchan.lol/palera1n/c-rewrite/releases/ | grep 'a href="v' | tail -n1 | cut -d'>' -f2 | cut -d/ -f1)
+	else
+                download_version=$(curl -s https://api.github.com/repos/palera1n/palera1n/releases | grep -m 1 -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//')
+	fi
         info "Using release tag ${download_version}."
     ;;
 esac
@@ -180,16 +185,22 @@ info "Found OS type ($os_name $arch)."
 # Run
 # =========
 
+if [ "$china" = "1" ]; then
+	download_prefix="https://cdn.nickchan.lol/palera1n/c-rewrite/releases"
+else
+	download_prefix="https://github.com/palera1n/palera1n/releases/download"
+fi
+
 info "Fetching palera1n (${prefix}${download_version}) build for ($os_name $arch)."
 mkdir -p /usr/local/bin
 rm /usr/local/bin/palera1n > /dev/null 2>&1
 
 case "$os" in
     Linux)
-        download "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-linux-${arch}"
+        download "${download_prefix}/${download_version}/palera1n-linux-${arch}"
     ;;
     Darwin)
-        download "https://github.com/palera1n/palera1n/releases/download/${download_version}/palera1n-macos-${arch}"
+        download "${download_prefix}/${download_version}/palera1n-macos-${arch}"
     ;;
 esac
 
