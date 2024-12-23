@@ -171,7 +171,7 @@ case "$1" in
     ;;
     *)
 	if [ "$china" = "1" ]; then
-	        download_version=$(curl -s https://cdn.nickchan.lol/palera1n/c-rewrite/releases/ | grep 'a href="v' | grep -v beta | tail -n1 | cut -d'>' -f2 | cut -d/ -f1)
+	        download_version=$(curl -s https://cdn.nickchan.lol/palera1n/c-rewrite/releases/ | grep 'a href="v' | grep -v 'v2.0.0-beta' | tail -n1 | cut -d'>' -f2 | cut -d/ -f1)
 	else
                 download_version=$(curl -s https://api.github.com/repos/palera1n/palera1n/releases | grep -m 1 -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//')
 	fi
