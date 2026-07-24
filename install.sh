@@ -1,13 +1,6 @@
 #!/usr/bin/env sh
 
-printf '%b' "\033c"
-printf '%s\n' '#'
-printf '%s\n' '# palera1n install script'
-printf '%s\n' '#'
-printf '%s\n' '# ========  Made by  ======='
-printf '%s\n' '# Samara, Staturnz'
-printf '%s\n' '# =========================='
-printf '%s\n' ''
+set -eu
 
 RED='\033[0;31m'
 YELLOW='\033[0;33m'
@@ -17,78 +10,143 @@ DARK_CYAN='\033[0;36m'
 NO_COLOR='\033[0m'
 BOLD='\033[1m'
 
+printf '%b' "\033c"
+printf '%s\n' '::'
+printf '%s\n' ':: =====================>'
+printf '%s\n' ':: palera1n install script'
+printf '%s\n' ':: =====================>'
+printf '%s\n' ''
+
 # =========
 # Logging
 # =========
 
 error() {
-    printf '%b\n' " - [${DARK_GRAY}$(date +'%m/%d/%y %H:%M:%S')${NO_COLOR}] ${RED}${BOLD}<Error>${NO_COLOR}: ${RED}$1${NO_COLOR}"
+    printf '%b\n' " - [${DARK_GRAY}$(date +'%m/%d/%y %H:%M:%S')${NO_COLOR}] ${RED}${BOLD}<Error>${NO_COLOR}: ${RED}$1${NO_COLOR}" >&2
 }
 
 info() {
     printf '%b\n' " - [${DARK_GRAY}$(date +'%m/%d/%y %H:%M:%S')${NO_COLOR}] ${DARK_CYAN}${BOLD}<Info>${NO_COLOR}: ${DARK_CYAN}$1${NO_COLOR}"
-
 }
 
 warning() {
     printf '%b\n' " - [${DARK_GRAY}$(date +'%m/%d/%y %H:%M:%S')${NO_COLOR}] ${YELLOW}${BOLD}<Warning>${NO_COLOR}: ${YELLOW}$1${NO_COLOR}"
 }
 
-# =========
-# Check if id is 0
-# =========
-
-[ "$(id -u)" -ne 0 ] && {
-    warning "In order to use this script, run with root or use sudo."
+if [ "$(id -u)" -eq 0 ]; then
+    error "Run this script without sudo!"
     exit 1
-}
+fi
 
 # =========
 # Variables
 # =========
 
-os=$(uname)
+os="$(uname)"
 os_name="$os"
-install_path="/usr/local/bin/palera1n"
-china="$(echo $LANG | grep -q CN && echo 1)"
+prefix_path="${XDG_BIN_HOME:-$HOME/.local}"
+bin_path="$prefix_path/bin"
+install_path="$bin_path/palera1n"
+old_install_path="/usr/local/bin/palera1n"
 
 download() {
-    status=$(curl --progress-bar --write-out '%{http_code}' -Lo $install_path "$1")
+    local url="$1"
+    local dest="${2:-$install_path}"
+
+    status=$(curl --progress-bar --write-out '%{http_code}' -Lo "$dest" "$url")
 
     if [ "$status" -ne 200 ]; then
-        error "palera1n failed to download. Please check your internet connection and try again. (Status: $status)"
+        error "palera1n failed to download. Check your internet connection. (HTTP Status: $status)"
+        rm -f -- "$dest"
         exit 1
     fi
+
+    chmod +x "$dest"
 }
 
 remove_palera1n() {
+    local removed=false
+
     if [ -e "${install_path}" ]; then
-        rm ${install_path}
-        info "palera1n was successfully removed from ${install_path}."
-    else
-        error "palera1n is not installed at ${install_path}."
-        exit 1
+        rm -f -- "${install_path}"
+        rm -f -- "${prefix_path}/share/man/man1/palera1n.1" 2>/dev/null || true
+        rm -f -- "${prefix_path}/share/man/man8/p1ctl.8" 2>/dev/null || true
+        removed=true
     fi
+
+    if [ -e "${old_install_path}" ]; then
+        info "Removing legacy installation from ${old_install_path} (sudo required)..."
+        sudo rm -f -- "${old_install_path}"
+        removed=true
+    fi
+
+    if [ "${removed}" = "true" ]; then
+        info "Successfully removed."
+    else
+        warning "palera1n installation was not found."
+    fi
+}
+
+add_to_path() {
+    local path_dir="$1"
+    local export_line="export PATH=\"\$PATH:${path_dir}\""
+
+    case ":$PATH:" in
+        *":${path_dir}:"*)
+            return 0
+            ;;
+    esac
+
+    local target_profile=""
+    case "${SHELL:-}" in
+        */zsh)  target_profile="$HOME/.zshrc" ;;
+        */bash) target_profile="$HOME/.bashrc" ;;
+        *)      target_profile="$HOME/.profile" ;;
+    esac
+
+    if [ -f "$target_profile" ] && grep -Fqx "$export_line" "$target_profile" 2>/dev/null; then
+        export PATH="$PATH:$path_dir"
+        return 0
+    fi
+
+    printf 'Add "%s" to your PATH permanently? [Y/n] ' "$path_dir"
+    read -r reply
+
+    case "$reply" in
+        ""|[Yy]|[Yy][Ee][Ss])
+            mkdir -p "$(dirname "$target_profile")"
+            printf '\n# Added by palera1n installer\n%s\n' "$export_line" >> "$target_profile"
+            export PATH="$PATH:$path_dir"
+            info "Added ${path_dir} to PATH in ${target_profile}."
+            ;;
+        *)
+            info "Skipping..."
+            ;;
+    esac
 }
 
 print_help() {
     cat << EOF
-Usage: $0 [-hlnr]
+Usage: $0 [-h|--help] [-r|--remove]
 
 Options:
-    -h, --help          Print this help
+    -h, --help          Print this help message
     -r, --remove        Uninstall palera1n
 EOF
 }
 
 # =========
-# Dependancies
+# Dependencies
 # =========
 
 case "$os" in
     Linux)
         if ! command -v curl >/dev/null 2>&1; then
-            error "If you want to use this script, please install curl."
+            error "curl is required to run this script."
+            exit 1
+        fi
+        if ! command -v tar >/dev/null 2>&1; then
+            error "tar is required to run this script."
             exit 1
         fi
     ;;
@@ -104,10 +162,11 @@ case "$os" in
         os_name="Linux"
     ;;
     Darwin)
-        if [ "$(uname -r | cut -d. -f1)" -gt "15" ]; then
+        os_version=$(uname -r | cut -d. -f1)
+        if [ "$os_version" -gt 15 ]; then
             os_name="macOS"
         elif [ "$(uname -m | head -c2)" = "iP" ]; then
-            error "palera1n install script is not meant to used on iOS devices. Please use on a PC."
+            error "The palera1n installer script is not meant for iOS devices directly. Please run on a PC."
             exit 1
         else
             os_name="Mac OS X"
@@ -120,26 +179,25 @@ case "$os" in
     ;;
 esac
 
-[ "$os" = "Linux" ] && {
-    grep -qi Microsoft /proc/version > /dev/null 2>&1 && {
+if [ "$os" = "Linux" ]; then
+    if grep -qi Microsoft /proc/version 2>/dev/null; then
         error "palera1n is not supported on WSL. Please use another supported platform."
-        error "Windows not really using for manipulating OSX images, compiled in mingw tool for this working unstable and incorrectly."
         exit 1
-    }
-}
+    fi
+fi
 
 case "$arch_check" in
     x86_64* | amd64)
-        arch=x86_64
+        arch="x86_64"
     ;;
     i?86 | x86*)
-        arch=x86
+        arch="x86"
     ;;
     aarch64* | arm64*)
-        arch=arm64
+        arch="arm64"
     ;;
     arm*)
-        arch=armel
+        arch="armel"
     ;;
     *)
         error "Unknown or unsupported architecture ($arch_check)."
@@ -151,70 +209,91 @@ esac
 # Args
 # =========
 
-case "$1" in
-    "" ) ;;
-    "-r" | "--remove" | "--help" | "-h" ) ;;
-    * )
+case "${1:-}" in
+    "") ;;
+    "-r" | "--remove")
+        remove_palera1n
+        exit 0
+        ;;
+    "-h" | "--help")
+        print_help
+        exit 0
+        ;;
+    *)
         error "Invalid option: \"$1\""
+        print_help
         exit 1
         ;;
 esac
-
-case "$1" in
-    "--remove" | "-r")
-        remove_palera1n
-        exit 0
-    ;;
-    "--help" | "-h")
-        print_help
-        exit 1
-    ;;
-    *)
-	if [ "$china" = "1" ]; then
-	        download_version=$(curl -s https://cdn.nickchan.lol/palera1n/c-rewrite/releases/ | grep 'a href="v' | grep -v 'v2.0.0-beta' | tail -n1 | cut -d'>' -f2 | cut -d/ -f1)
-	else
-                download_version=$(curl -s https://api.github.com/repos/palera1n/palera1n/releases | grep -m 1 -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//')
-	fi
-        info "Using release tag ${download_version}."
-    ;;
-esac
-
-info "Found OS type ($os_name $arch)."
 
 # =========
 # Run
 # =========
 
-if [ "$china" = "1" ]; then
-	download_suffix="binaries/"
-	download_prefix="https://cdn.nickchan.lol/palera1n/c-rewrite/releases"
-else
-	download_prefix="https://github.com/palera1n/palera1n/releases/download"
+download_version=$(curl -s https://api.github.com/repos/palera1n/palera1n/releases/latest | grep -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//' || true)
+
+if [ -z "$download_version" ]; then
+    error "Could not retrieve the latest release version from GitHub API."
+    exit 1
 fi
 
-info "Fetching palera1n (${prefix}${download_version}) build for ($os_name $arch)."
-mkdir -p /usr/local/bin
-rm /usr/local/bin/palera1n > /dev/null 2>&1
+info "Detected environment: $os_name ($arch)"
+info "Targeting release tag: ${download_version}"
+
+download_prefix="https://github.com/palera1n/palera1n/releases/download"
+mkdir -p "$bin_path"
+
+if [ -f "$install_path" ] || [ -f "$old_install_path" ]; then
+    warning "Existing palera1n installation found. Replacing..."
+    remove_palera1n
+fi
 
 case "$os" in
     Linux)
-        download "${download_prefix}/${download_version}/${download_suffix}palera1n-linux-${arch}"
-    ;;
+        tgz_url="${download_prefix}/${download_version}/palera1n-linux-${arch}.tar.gz"
+        bin_url="${download_prefix}/${download_version}/palera1n-linux-${arch}"
+
+        if curl -fsLI "$tgz_url" >/dev/null 2>&1; then
+            info "Installing from Linux tarball..."
+            curl -fsSL "$tgz_url" | tar -xz -C "$prefix_path"
+        else
+            info "Installing standalone Linux binary..."
+            download "$bin_url"
+            chmod +x "$install_path" 2>/dev/null || true
+        fi
+        ;;
     Darwin)
-        download "${download_prefix}/${download_version}/${download_suffix}palera1n-macos-${arch}"
-    ;;
+        dmg_url="${download_prefix}/${download_version}/palera1n-macos-universal.dmg"
+        tgz_url="${download_prefix}/${download_version}/palera1n-macos-${arch}.tar.gz"
+        bin_url="${download_prefix}/${download_version}/palera1n-macos-${arch}"
+
+        if curl -fsLI "$dmg_url" >/dev/null 2>&1; then
+            error "DMG releases are not supported by this CLI installer. Please download the DMG manually."
+            exit 1
+        fi
+
+        if curl -fsLI "$tgz_url" >/dev/null 2>&1; then
+            info "Installing from macOS tarball..."
+            curl -fsSL "$tgz_url" | tar -xz -C "$prefix_path"
+        else
+            info "Installing standalone macOS binary..."
+            download "$bin_url"
+            chmod +x "$install_path" 2>/dev/null || true
+        fi
+        ;;
 esac
 
-if [ -f "$install_path" ]; then
-    chmod +x $install_path
+add_to_path "$bin_path"
 
-    if ! palera1n --version  > /dev/null 2>&1;
-    then
+if [ -f "$install_path" ]; then
+    if ! "$install_path" --version > /dev/null 2>&1; then
         error "palera1n installation is corrupted. Please check your internet connection and try again."
         exit 1
     fi
 
-    info "palera1n is now installed at ${install_path}."
+    info "palera1n installed successfully at ${install_path}."
+    info "Type \`palera1n\` in your terminal to get started!"
+    exec "${SHELL:-/bin/sh}" -l
 else 
     error "palera1n failed to install. Please check your internet connection and try again."
     exit 1
