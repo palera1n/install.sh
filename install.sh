@@ -230,15 +230,44 @@ esac
 # Run
 # =========
 
-download_version=$(curl -s https://api.github.com/repos/palera1n/palera1n/releases/latest | grep -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//' || true)
+latest_tag=$(curl -fsSL https://api.github.com/repos/palera1n/palera1n/tags \
+    | grep -m1 -o '"name": "[^"]*' \
+    | sed 's/"name": "//' || true)
 
-if [ -z "$download_version" ]; then
-    error "Could not retrieve the latest release version from GitHub API."
+latest_release=$(curl -fsSL https://api.github.com/repos/palera1n/palera1n/releases/latest \
+    | grep -o '"tag_name": "[^"]*' \
+    | sed 's/"tag_name": "//' || true)
+
+if [ -z "$latest_release" ]; then
+    error "Could not retrieve the latest release version from GitHub."
     exit 1
 fi
 
+if [ -n "$latest_tag" ] && [ "$latest_tag" != "$latest_release" ]; then
+    printf "Select a version to download:\n"
+    printf "  1) Latest Beta           (%s)\n" "$latest_tag"
+    printf "  2) Latest Release        (%s)\n" "$latest_release"
+    printf "Choice [1/2, default: 2]: "
+    read -r choice
+
+    case "$choice" in
+        1)
+            download_version="$latest_tag"
+            ;;
+        ""|2)
+            download_version="$latest_release"
+            ;;
+        *)
+            error "Invalid selection."
+            exit 1
+            ;;
+    esac
+else
+    download_version="$latest_release"
+fi
+
 info "Detected environment: $os_name ($arch)"
-info "Targeting release tag: ${download_version}"
+info "Targeting version: ${download_version}"
 
 download_prefix="https://github.com/palera1n/palera1n/releases/download"
 mkdir -p "$bin_path"
