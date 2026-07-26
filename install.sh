@@ -48,6 +48,8 @@ prefix_path="${XDG_BIN_HOME:-$HOME/.local}"
 bin_path="$prefix_path/bin"
 install_path="$bin_path/palera1n"
 old_install_path="/usr/local/bin/palera1n"
+# DMG shit
+downloaded_dmg="0"
 
 download() {
     local url="$1"
@@ -296,12 +298,17 @@ case "$os" in
         tgz_url="${download_prefix}/${download_version}/palera1n-macos-${arch}.tar.gz"
         bin_url="${download_prefix}/${download_version}/palera1n-macos-${arch}"
 
-        if curl -fsLI "$dmg_url" >/dev/null 2>&1; then
-            error "DMG releases are not supported by this CLI installer. Please download the DMG manually."
-            exit 1
-        fi
+        hdiutil detach "/Volumes/palera1n-macos-universal" >/dev/null 2>&1 || true
 
-        if curl -fsLI "$tgz_url" >/dev/null 2>&1; then
+        if curl -fsLI "$dmg_url" >/dev/null 2>&1; then
+            info "Downloading macOS DMG..."
+            dmg_file="$TMPDIR/palera1n-macos-universal-$(date +%s).dmg"
+            download "$dmg_url" "$dmg_file"
+            hdiutil attach "$dmg_file" >/dev/null 2>&1
+            open "/Volumes/palera1n-macos-universal"
+            rm -f -- "$dmg_file"
+            downloaded_dmg="1"
+        elif curl -fsLI "$tgz_url" >/dev/null 2>&1; then
             info "Installing from macOS tarball..."
             curl -fsSL "$tgz_url" | tar -xz -C "$prefix_path"
         else
@@ -311,6 +318,11 @@ case "$os" in
         fi
         ;;
 esac
+
+if [ "$downloaded_dmg" = "1" ]; then
+    info "palera1n DMG downloaded. Please drag the palera1n app to your Applications folder."
+    exit 0
+fi
 
 add_to_path "$bin_path"
 
